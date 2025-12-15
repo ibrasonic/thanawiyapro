@@ -50,3 +50,9 @@ docs/.vuepress/dist/
 
 # Optional
 .history/
+
+# Local files (not for deployment)
+*.zip
+MilestoneDetails.txt
+backend/MilestoneDetails.txt
+db-backup/
