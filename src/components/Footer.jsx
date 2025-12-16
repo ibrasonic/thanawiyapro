@@ -39,7 +39,7 @@ function Footer() {
                     </Link>
                   </li>
                 </>
-              ) : (
+              ) : user.role === 'student' ? (
                 <>
                   <li className="mb-2">
                     <Link to="/student/dashboard" className="text-muted text-decoration-none hover-link">
@@ -57,7 +57,43 @@ function Footer() {
                     </Link>
                   </li>
                 </>
-              )}
+              ) : user.role === 'tutor' ? (
+                <>
+                  <li className="mb-2">
+                    <Link to="/tutor/dashboard" className="text-muted text-decoration-none hover-link">
+                      لوحة التحكم
+                    </Link>
+                  </li>
+                  <li className="mb-2">
+                    <Link to="/tutor/sessions" className="text-muted text-decoration-none hover-link">
+                      الحصص
+                    </Link>
+                  </li>
+                  <li className="mb-2">
+                    <Link to="/tutor/students" className="text-muted text-decoration-none hover-link">
+                      الطلاب
+                    </Link>
+                  </li>
+                </>
+              ) : user.role === 'admin' ? (
+                <>
+                  <li className="mb-2">
+                    <Link to="/admin/dashboard" className="text-muted text-decoration-none hover-link">
+                      لوحة التحكم
+                    </Link>
+                  </li>
+                  <li className="mb-2">
+                    <Link to="/admin/tutors" className="text-muted text-decoration-none hover-link">
+                      المدرسين
+                    </Link>
+                  </li>
+                  <li className="mb-2">
+                    <Link to="/admin/users" className="text-muted text-decoration-none hover-link">
+                      المستخدمين
+                    </Link>
+                  </li>
+                </>
+              ) : null}
             </ul>
           </Col>
           
