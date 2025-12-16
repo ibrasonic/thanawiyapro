@@ -1,29 +1,80 @@
-import { Container, Card, Table, Badge, Button } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Container, Card, Table, Badge, Button, Spinner, Alert } from 'react-bootstrap';
 import { FaUserCheck, FaUserClock } from 'react-icons/fa';
+import { tutorAPI } from '../../services/backendApi';
 
 function AdminTutors() {
-  const pendingTutors = [
-    { id: 1, name: 'أحمد خالد', university: 'القاهرة', major: 'هندسة', year: 'الثالثة', subjects: ['الرياضيات', 'الفيزياء'], appliedDate: '2025-11-20', bio: 'خبرة سنتين في التدريس' },
-    { id: 2, name: 'نور حسن', university: 'عين شمس', major: 'علوم', year: 'الرابعة', subjects: ['الكيمياء', 'الأحياء'], appliedDate: '2025-11-21', bio: 'طالبة متفوقة' },
-    { id: 3, name: 'ياسمين محمود', university: 'الإسكندرية', major: 'آداب', year: 'الثانية', subjects: ['اللغة العربية'], appliedDate: '2025-11-22', bio: 'شغوفة بالتدريس' }
-  ];
+  const [tutors, setTutors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleApprove = (id) => {
-    alert(`تم قبول المدرس رقم ${id}`);
-    // Update user status in localStorage
-  };
+  useEffect(() => {
+    fetchTutors();
+  }, []);
 
-  const handleReject = (id) => {
-    if (window.confirm('هل أنت متأكد من رفض هذا المدرس؟')) {
-      alert(`تم رفض المدرس رقم ${id}`);
+  const fetchTutors = async () => {
+    try {
+      setLoading(true);
+      const response = await tutorAPI.getAllTutors();
+      if (response.success) {
+        setTutors(response.data);
+      } else {
+        setError('فشل في تحميل بيانات المدرسين');
+      }
+    } catch (err) {
+      setError('حدث خطأ في تحميل البيانات');
+      console.error('Error fetching tutors:', err);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleApprove = async (tutorId) => {
+    try {
+      await tutorAPI.updateTutor(tutorId, { isVerified: true });
+      alert(`تم قبول المدرس`);
+      fetchTutors(); // Refresh list
+    } catch (err) {
+      alert('فشل في قبول المدرس');
+      console.error('Error approving tutor:', err);
+    }
+  };
+
+  const handleReject = async (tutorId) => {
+    if (window.confirm('هل أنت متأكد من رفض هذا المدرس؟')) {
+      try {
+        await tutorAPI.updateTutor(tutorId, { isVerified: false });
+        alert(`تم رفض المدرس`);
+        fetchTutors(); // Refresh list
+      } catch (err) {
+        alert('فشل في رفض المدرس');
+        console.error('Error rejecting tutor:', err);
+      }
+    }
+  };
+
+  // Separate verified and pending tutors
+  const pendingTutors = tutors.filter(t => !t.isVerified);
+  const verifiedTutors = tutors.filter(t => t.isVerified);
+
+  if (loading) {
+    return (
+      <Container className="py-4 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">جاري التحميل...</span>
+        </Spinner>
+      </Container>
+    );
+  }
 
   return (
     <Container className="py-4">
       <h1 className="h3 mb-4"><FaUserClock className="me-2 text-warning" />مراجعة المدرسين</h1>
 
-      <Card className="shadow-sm border-0">
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      {/* Pending Tutors */}
+      <Card className="shadow-sm border-0 mb-4">
         <Card.Body>
           <h2 className="h5 mb-3">طلبات قيد المراجعة ({pendingTutors.length})</h2>
           
@@ -41,6 +92,7 @@ function AdminTutors() {
                     <th>الجامعة/التخصص</th>
                     <th>السنة</th>
                     <th>المواد</th>
+                    <th>السعر/ساعة</th>
                     <th>تاريخ التقديم</th>
                     <th>النبذة</th>
                     <th>الإجراءات</th>
@@ -48,8 +100,8 @@ function AdminTutors() {
                 </thead>
                 <tbody>
                   {pendingTutors.map((tutor) => (
-                    <tr key={tutor.id}>
-                      <td className="fw-bold">{tutor.name}</td>
+                    <tr key={tutor._id}>
+                      <td className="fw-bold">{tutor.userId?.name || 'غير متوفر'}</td>
                       <td>
                         <div className="small">
                           <div>{tutor.university}</div>
@@ -58,30 +110,80 @@ function AdminTutors() {
                       </td>
                       <td className="small">{tutor.year}</td>
                       <td>
-                        {tutor.subjects.map((subject, i) => (
+                        {tutor.teachingSubjects?.map((subject, i) => (
                           <Badge key={i} bg="primary" className="me-1 mb-1 small">{subject}</Badge>
                         ))}
                       </td>
-                      <td className="small">{tutor.appliedDate}</td>
-                      <td className="small" style={{ maxWidth: '200px' }}>{tutor.bio}</td>
+                      <td className="small">{tutor.hourlyRate} جنيه</td>
+                      <td className="small">{new Date(tutor.createdAt).toLocaleDateString('ar-EG')}</td>
+                      <td className="small" style={{ maxWidth: '200px' }}>{tutor.tutorBio || 'لا يوجد'}</td>
                       <td>
                         <div className="d-flex gap-1">
                           <Button 
                             size="sm" 
                             variant="success"
-                            onClick={() => handleApprove(tutor.id)}
+                            onClick={() => handleApprove(tutor._id)}
                           >
                             <FaUserCheck /> قبول
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline-danger"
-                            onClick={() => handleReject(tutor.id)}
+                            onClick={() => handleReject(tutor._id)}
                           >
                             رفض
                           </Button>
                         </div>
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Verified Tutors */}
+      <Card className="shadow-sm border-0">
+        <Card.Body>
+          <h2 className="h5 mb-3 text-success">المدرسين المقبولين ({verifiedTutors.length})</h2>
+          
+          {verifiedTutors.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              <p>لا يوجد مدرسين مقبولين</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <Table hover>
+                <thead className="table-light">
+                  <tr>
+                    <th>الاسم</th>
+                    <th>الجامعة/التخصص</th>
+                    <th>المواد</th>
+                    <th>السعر/ساعة</th>
+                    <th>التقييم</th>
+                    <th>الجلسات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {verifiedTutors.map((tutor) => (
+                    <tr key={tutor._id}>
+                      <td className="fw-bold">{tutor.userId?.name || 'غير متوفر'}</td>
+                      <td>
+                        <div className="small">
+                          <div>{tutor.university}</div>
+                          <div className="text-muted">{tutor.major}</div>
+                        </div>
+                      </td>
+                      <td>
+                        {tutor.teachingSubjects?.map((subject, i) => (
+                          <Badge key={i} bg="success" className="me-1 mb-1 small">{subject}</Badge>
+                        ))}
+                      </td>
+                      <td className="small">{tutor.hourlyRate} جنيه</td>
+                      <td className="small">⭐ {tutor.rating?.toFixed(1) || '0.0'} ({tutor.totalRatings || 0})</td>
+                      <td className="small">{tutor.completedSessions || 0} جلسة</td>
                     </tr>
                   ))}
                 </tbody>
