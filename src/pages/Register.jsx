@@ -165,10 +165,12 @@ function Register() {
     { name: 'علم النفس', icon: '🧠', tracks: ['أدبي'] }
   ];
 
-  // تصفية المواد بناءً على الشعبة المختارة
-  const subjects = formData.track 
-    ? allSubjects.filter(subject => subject.tracks.includes(formData.track))
-    : [];
+  // تصفية المواد بناءً على الشعبة المختارة (للطلاب) أو كل المواد (للمدرسين)
+  const subjects = formData.userType === 'tutor'
+    ? allSubjects // المدرسون يمكنهم اختيار أي مادة
+    : formData.track 
+      ? allSubjects.filter(subject => subject.tracks.includes(formData.track))
+      : [];
 
   return (
     <Container className="py-5">
