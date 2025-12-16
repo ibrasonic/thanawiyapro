@@ -6,11 +6,12 @@ import { bookingAPI } from '../../services/backendApi';
 import { FaMoneyBillWave, FaUsers, FaCalendarCheck, FaStar, FaClock, FaChartLine } from 'react-icons/fa';
 
 function TutorDashboard() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [upcomingSessions, setUpcomingSessions] = useState([]);
   const [recentRequests, setRecentRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uniqueStudents, setUniqueStudents] = useState(0);
+  const [tutorProfile, setTutorProfile] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -18,6 +19,17 @@ function TutorDashboard() {
 
   const fetchDashboardData = async () => {
     if (!user) return;
+    
+    // Fetch tutor profile to check verification status
+    try {
+      const { tutorAPI } = await import('../../services/backendApi');
+      const tutorResponse = await tutorAPI.getTutorByUserId(user._id);
+      if (tutorResponse.success) {
+        setTutorProfile(tutorResponse.data);
+      }
+    } catch (error) {
+      console.error('Error fetching tutor profile:', error);
+    }
     
     try {
       setLoading(true);
@@ -99,7 +111,8 @@ function TutorDashboard() {
     }
   };
 
-  if (!user?.approved && user?.role === 'tutor') {
+  // Check if tutor is verified
+  if (user?.role === 'tutor' && tutorProfile && !tutorProfile.isVerified) {
     return (
       <Container className="py-5">
         <Card className="text-center p-5 shadow-sm">
@@ -114,6 +127,16 @@ function TutorDashboard() {
             <p className="text-muted">
               سنرسل لك إشعار عبر البريد الإلكتروني فور تفعيل حسابك.
             </p>
+            <Button 
+              variant="primary" 
+              onClick={async () => {
+                await refreshUser();
+                window.location.reload();
+              }}
+              className="mt-3"
+            >
+              تحديث الحالة
+            </Button>
           </Card.Body>
         </Card>
       </Container>
@@ -128,9 +151,11 @@ function TutorDashboard() {
             <h1 id="dashboard-title" className="h3 mb-1">مرحباً، {user?.name}</h1>
             <p className="text-muted mb-0">لوحة تحكم المدرس - {user?.university}</p>
           </div>
-          <Badge bg="success" className="px-3 py-2">
-            <FaStar className="me-1" /> مدرس معتمد
-          </Badge>
+          {tutorProfile?.isVerified && (
+            <Badge bg="success" className="px-3 py-2">
+              <FaStar className="me-1" /> مدرس معتمد
+            </Badge>
+          )}
         </div>
 
         {/* Stats Cards */}
