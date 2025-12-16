@@ -123,7 +123,7 @@ function Register() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (formData.userType === 'student' && formData.interests.length === 0) {
@@ -142,7 +142,13 @@ function Register() {
       }
     }
 
-    const result = register(formData);
+    // Transform data for backend (userType -> role)
+    const registrationData = {
+      ...formData,
+      role: formData.userType
+    };
+
+    const result = await register(registrationData);
     if (result.success) {
       alert('تم إنشاء حسابك بنجاح! يمكنك الآن تسجيل الدخول');
       navigate('/login');
