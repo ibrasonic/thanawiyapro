@@ -148,6 +148,21 @@ function Register() {
       role: formData.userType
     };
 
+    // Remove student-specific fields if tutor, and vice versa
+    if (formData.userType === 'tutor') {
+      delete registrationData.track;
+      delete registrationData.interests;
+      delete registrationData.bio;
+    } else {
+      delete registrationData.university;
+      delete registrationData.major;
+      delete registrationData.year;
+      delete registrationData.teachingSubjects;
+      delete registrationData.hourlyRate;
+      delete registrationData.tutorBio;
+      delete registrationData.availability;
+    }
+
     const result = await register(registrationData);
     if (result.success) {
       alert('تم إنشاء حسابك بنجاح! يمكنك الآن تسجيل الدخول');
