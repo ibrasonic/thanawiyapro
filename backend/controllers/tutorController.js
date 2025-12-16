@@ -141,7 +141,7 @@ export const updateTutor = asyncHandler(async (req, res, next) => {
     return next(new AppError('Not authorized to update this tutor profile', 403));
   }
 
-  const { university, major, year, teachingSubjects, hourlyRate, tutorBio, availability } = req.body;
+  const { university, major, year, teachingSubjects, hourlyRate, tutorBio, availability, isVerified } = req.body;
 
   // Update fields
   if (university) tutor.university = university;
@@ -151,6 +151,11 @@ export const updateTutor = asyncHandler(async (req, res, next) => {
   if (hourlyRate) tutor.hourlyRate = hourlyRate;
   if (tutorBio !== undefined) tutor.tutorBio = tutorBio;
   if (availability) tutor.availability = availability;
+  
+  // Allow admin to update verification status
+  if (req.user.role === 'admin' && isVerified !== undefined) {
+    tutor.isVerified = isVerified;
+  }
 
   await tutor.save();
   await tutor.populate('userId', 'name email phone avatar bio');
