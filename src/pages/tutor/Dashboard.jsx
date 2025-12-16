@@ -129,10 +129,7 @@ function TutorDashboard() {
             </p>
             <Button 
               variant="primary" 
-              onClick={async () => {
-                await refreshUser();
-                window.location.reload();
-              }}
+              onClick={fetchDashboardData}
               className="mt-3"
             >
               تحديث الحالة
